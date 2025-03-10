@@ -12,7 +12,7 @@ export const SMOOTH_TIME: number = 2;
 
 const isStable = process.env.REACT_APP_ENV === "stable";
 
-export const PKG_URL = `https://postguard-${process.env.REACT_APP_ENV}.cs.ru.nl/pkg`
+export const PKG_URL = `http://localhost:8087`
 
 // Stable: https://cryptify.nl/api/v2
 // Main: https://cryptify.nl/main/api/v2

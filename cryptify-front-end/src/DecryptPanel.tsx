@@ -1,6 +1,5 @@
 import "./DecryptPanel.css";
 import React from "react";
-import CryptFileList from "./CryptFileList";
 import createProgressReporter from "./ProgressReporter";
 import streamSaver from "streamsaver";
 import Lang from "./Lang";
@@ -13,15 +12,13 @@ import googlePlayStoreNL from "./resources/google-playstore-nl.svg";
 import checkmark from "./resources/checkmark.svg";
 
 import { SMOOTH_TIME, PKG_URL, METRICS_HEADER } from "./Constants";
-import { getFileLoadStream } from "./FileProvider";
 import { withTransform } from "./utils";
-
-import YiviCore from "@privacybydesign/yivi-core";
-import YiviWeb from "@privacybydesign/yivi-web";
-import YiviClient from "@privacybydesign/yivi-client";
 
 //import "@privacybydesign/yivi-css";
 import { IPolicy } from "@e4a/pg-wasm";
+import CryptFileInput from "./CryptFileInput";
+import {getFileLoadStream} from "./FileProvider";
+import CryptFileList from "./CryptFileList";
 
 streamSaver.mitm = `${process.env.PUBLIC_URL}/mitm.html?version=2.0.0`;
 
@@ -42,6 +39,7 @@ type StreamDecryptInfo = {
 type DecryptState = {
   decryptionState: DecryptionState;
   fakeFile: File | null;
+  files: File[];
   decryptInfo: StreamDecryptInfo | null;
   percentage: number;
   done: boolean;
@@ -70,6 +68,7 @@ async function getVerificationKey(): Promise<string> {
 
 const defaultDecryptState: DecryptState = {
   decryptionState: DecryptionState.IrmaSession,
+  files: [],
   fakeFile: null,
   decryptInfo: null,
   percentage: 0,
@@ -126,6 +125,19 @@ export default class DecryptPanel extends React.Component<
     return false;
   }
 
+  onFile(files: FileList) {
+    const fileArr = Array.from(files);
+    this.setState((state) => ({
+      files: state.files.concat(fileArr),
+    }));
+  }
+
+  onRemoveFile(index: number) {
+    this.setState((state) => ({
+      files: state.files.filter((_, i) => i !== index),
+    }));
+  }
+
   async componentDidMount() {
     await this.onDecrypt();
   }
@@ -149,6 +161,8 @@ export default class DecryptPanel extends React.Component<
   }
 
   async applyDecryption() {
+
+    // Here the uploaded file needs to come
     const [streamSize, encrypted] = await getFileLoadStream(
       this.state.abort.signal,
       this.props.downloadUuid
@@ -169,44 +183,16 @@ export default class DecryptPanel extends React.Component<
     const mod = await this.state.modPromise;
     const unsealer = await mod.StreamUnsealer.new(encrypted, vk);
 
-    const recipients = unsealer.inspect_header();
     const sender = unsealer.public_identity();
 
     // there is always only one sender
     this.setState({ senderPublic: sender.con[0].v });
 
-    const { ts: timestamp, con } = recipients.get(this.props.recipient);
-
-    const kr = {
-      con: con.map(({ t, v }) => {
-        if (t === "pbdf.sidn-pbdf.email.email") return { t, v: this.props.recipient };
-        if (v.includes("*") || v === "") return { t };
-        return { t, v };
-      }),
-    };
-
-    const session = {
-      url: PKG_URL,
-      start: {
-        url: (o) => `${o.url}/v2/request/start`,
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...METRICS_HEADER },
-        body: JSON.stringify(kr),
-      },
-      result: {
-        url: (o, { sessionToken }) => `${o.url}/v2/request/jwt/${sessionToken}`,
-        headers: METRICS_HEADER,
-        parseResponse: (r) => {
-          return r
-            .text()
-            .then((jwt) =>
-              fetch(`${PKG_URL}/v2/request/key/${timestamp.toString()}`, {
+    const usk = await fetch(`${PKG_URL}/v2/request/key/0`, {
                 headers: {
-                  Authorization: `Bearer ${jwt}`,
                   ...METRICS_HEADER,
                 },
               })
-            )
             .then((r) => r.json())
             .then((json) => {
               if (json.status !== "DONE" || json.proofStatus !== "VALID")
@@ -214,27 +200,6 @@ export default class DecryptPanel extends React.Component<
               return json.key;
             })
             .catch((e) => console.log("error: ", e));
-        },
-      },
-    };
-
-    const yivi = new YiviCore({
-      element: ".crypt-irma-qr",
-      session: session,
-      state: {
-        serverSentEvents: false,
-        polling: {
-          endpoint: "status",
-          interval: 500,
-          startState: "INITIALIZED",
-        },
-      },
-      language: (this.props.lang as string).toLowerCase(),
-    });
-
-    yivi.use(YiviWeb);
-    yivi.use(YiviClient);
-    const usk = await yivi.start();
 
     this.setState({
       decryptionState: DecryptionState.AskDownload,
@@ -336,108 +301,39 @@ export default class DecryptPanel extends React.Component<
     );
   }
 
-  renderfilesField() {
-    const files = this.state.fakeFile === null ? [] : [this.state.fakeFile];
-    return (
-      <div>
-        <CryptFileList
-          lang={this.props.lang}
-          onAddFiles={null}
-          onRemoveFile={null}
-          files={files}
-          forUpload={false}
-          percentages={[this.state.percentage]}
-          done={[this.state.done]}
-        ></CryptFileList>
-      </div>
-    );
-  }
-
-  renderIrmaSession() {
-    const isMobile = this.isMobile();
-    let iosBtn = "";
-    let iosHref = "";
-    let androidBtn = "";
-    let androidHref = "";
-    switch (this.props.lang) {
-      case Lang.EN:
-        iosBtn = appleAppStoreEN;
-        iosHref = "https://apps.apple.com/app/irma-authenticatie/id1294092994";
-        androidBtn = googlePlayStoreEN;
-        androidHref =
-          "https://play.google.com/store/apps/details?id=org.irmacard.cardemu&hl=en";
-        break;
-      case Lang.NL:
-        iosBtn = appleAppStoreNL;
-        iosHref =
-          "https://apps.apple.com/nl/app/irma-authenticatie/id1294092994";
-        androidBtn = googlePlayStoreNL;
-        androidHref =
-          "https://play.google.com/store/apps/details?id=org.irmacard.cardemu&hl=nl";
-        break;
+  renderFilesField() {
+    if (this.state.files.length === 0) {
+      return (
+          <div className="crypt-file-upload-box">
+            <CryptFileInput
+                lang={this.props.lang}
+                onFile={(f) => this.onFile(f)}
+                multiple={true}
+                required={true}
+            />
+          </div>
+      );
+    } else {
+      return (
+          <div className="crypt-file-upload-box">
+            <CryptFileList
+                lang={this.props.lang}
+                onAddFiles={
+                       (f: FileList) => this.onFile(f)
+                }
+                onRemoveFile={
+                       (i) => this.onRemoveFile(i)
+                }
+                files={this.state.files}
+                forUpload={true}
+                percentages={[0]}
+                done={[true]}
+            ></CryptFileList>
+          </div>
+      );
     }
-
-    return (
-      <div className="crypt-progress-container">
-        <h3>
-          {isMobile
-            ? getTranslation(this.props.lang)
-                .decryptPanel_irmaInstructionHeaderMobile
-            : getTranslation(this.props.lang)
-                .decryptPanel_irmaInstructionHeaderQr}
-        </h3>
-        <p>
-          {isMobile
-            ? getTranslation(this.props.lang).decryptPanel_irmaInstructionMobile
-            : getTranslation(this.props.lang).decryptPanel_irmaInstructionQr}
-        </p>
-        <div className="crypt-irma-qr"></div>
-        <div className="get-irma-here-anchor">
-          <img className="irma-logo" src={yiviLogo} alt="irma-logo" />
-          <div
-            className="get-irma-text"
-            style={{
-              display: "inline-block",
-              verticalAlign: "middle",
-              height: "45pt",
-              marginLeft: "5pt",
-              marginBottom: "calc(1em/2)",
-            }}
-          >
-            {getTranslation(this.props.lang).decryptPanel_noIrma}
-          </div>
-          <div className="get-irma-buttons">
-            <a
-              href={iosHref}
-              style={{
-                display: "inline-block",
-                height: "38pt",
-                marginRight: "15pt",
-              }}
-            >
-              <img
-                style={{ height: "100%" }}
-                className="irma-appstore-button"
-                src={iosBtn}
-                alt="apple-appstore"
-              />
-            </a>
-            <a
-              href={androidHref}
-              style={{ display: "inline-block", height: "38pt" }}
-            >
-              <img
-                style={{ height: "100%" }}
-                className="irma-appstore-button"
-                src={androidBtn}
-                alt="google-playstore"
-              />
-            </a>
-          </div>
-        </div>
-      </div>
-    );
   }
+
 
   renderAskDownload() {
     return (
@@ -547,36 +443,35 @@ export default class DecryptPanel extends React.Component<
       return (
         <div>
           {this.renderSenderIdentity()}
-          {this.renderfilesField()}
-          {this.renderIrmaSession()}
+          {this.renderFilesField()}
         </div>
       );
     }
     if (this.state.decryptionState === DecryptionState.AskDownload) {
       return (
         <div>
-          {this.renderfilesField()}
+          {this.renderFilesField()}
           {this.renderAskDownload()}
         </div>
       );
     } else if (this.state.decryptionState === DecryptionState.Decrypting) {
       return (
         <div>
-          {this.renderfilesField()}
+          {this.renderFilesField()}
           {this.renderProgress()}
         </div>
       );
     } else if (this.state.decryptionState === DecryptionState.Done) {
       return (
         <div>
-          {this.renderfilesField()}
+          {this.renderFilesField()}
           {this.renderDone()}
         </div>
       );
     } else if (this.state.decryptionState === DecryptionState.Error) {
       return (
         <div>
-          {this.renderfilesField()}
+          {this.renderFilesField()}
           {this.renderError()}
         </div>
       );
