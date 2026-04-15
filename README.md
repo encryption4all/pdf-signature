@@ -1,6 +1,6 @@
 # <p align="center"><img src="./img/pg_logo.svg" height="128px" alt="PostGuard" /></p>
 
-> For full documentation, visit [docs.postguard.eu](https://docs.postguard.eu/repos/pdf-signature).
+> For full documentation, visit [docs.postguard.eu](https://docs.postguard.eu).
 
 PDF signing and signature verification utility using identity-based signatures. Extends PostGuard's identity-based cryptography to PDF document signing. The project has a Rust backend and a TypeScript/React frontend, structured similarly to Cryptify.
 
