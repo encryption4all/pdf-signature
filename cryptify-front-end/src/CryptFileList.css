@@ -115,3 +115,18 @@
   opacity:0;
   z-index: -9999;
 }
+
+/* WCAG 2.2 AA: keyboard-operable file remove button. */
+.file-icon-btn {
+  background: transparent;
+  border: 0;
+  padding: 0.25em;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.file-icon-btn:focus-visible {
+  outline: 2px solid #006ef4;
+  outline-offset: 2px;
+  border-radius: 2px;
+}

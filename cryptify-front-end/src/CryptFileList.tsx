@@ -82,12 +82,24 @@ class CryptFileList extends React.Component<CryptFileListProps, CryptFileListSta
       const fileRemoveSrc = this.state.hoverCrossIdx === index ? fileRemoveHover : fileRemove;
       const f = this.props.onRemoveFile;
       return (
-        <img className="file-icon" src={ fileRemoveSrc } alt="file-remove-icon"
-          onMouseOver={(e) => this.setState({ hoverCrossIdx: index })}
-          onMouseOut={(e) => this.setState({ hoverCrossIdx: -1 })}
-          style={{ height: "0.75em" }}
-          onClick={(e) => f(index) }
-        />
+        <button
+          type="button"
+          className="file-icon-btn"
+          aria-label={`Remove file ${this.props.files[index]?.name ?? index + 1}`}
+          onMouseOver={(_e) => this.setState({ hoverCrossIdx: index })}
+          onMouseOut={(_e) => this.setState({ hoverCrossIdx: -1 })}
+          onFocus={(_e) => this.setState({ hoverCrossIdx: index })}
+          onBlur={(_e) => this.setState({ hoverCrossIdx: -1 })}
+          onClick={(_e) => f(index)}
+        >
+          <img
+            className="file-icon"
+            src={fileRemoveSrc}
+            alt=""
+            aria-hidden="true"
+            style={{ height: "0.75em" }}
+          />
+        </button>
       );
     }
   }
