@@ -334,7 +334,7 @@ export default class EncryptPanel extends React.Component<
         selfAborted: false,
       });
     } catch (e) {
-      console.error("Error occured during encryption: ", e);
+      console.error("Error occurred during encryption: ", e);
       if (this.state.selfAborted === false) {
         this.setState({
           encryptionState: EncryptionState.Error,
@@ -573,38 +573,46 @@ export default class EncryptPanel extends React.Component<
       return attributes.map(({ t, v }, j) => {
         return (
           <div className="attribute-field">
+            <label htmlFor={`recipient-attr-${j}`} className="visually-hidden">
+              {`${prefix} ${getTranslation(parent.props.lang)[t]}`}
+            </label>
             <input
+              id={`recipient-attr-${j}`}
               placeholder={`${prefix} ${getTranslation(parent.props.lang)[t]}`}
               required
               value={v}
               onChange={(e) => onAttributesChanged(j, e.target.value)}
             />
             <button
+              type="button"
               className="btn-delete"
+              aria-label={`Remove ${getTranslation(parent.props.lang)[t]}`}
               onClick={(e) => removeExtraAttribute(j)}
             >
-              x
+              <span aria-hidden="true">x</span>
             </button>
           </div>
         );
       });
     };
 
-    
+
     const renderSenderFields = () => {
       const prefix =
           getTranslation(parent.props.lang)
               .encryptPanel_emailSenderAttributePrefix;
-      
+
       return attributes.map(({ t, v }, j) => {
         return (
           <div className="attribute-field">
             <p style={{display:`inline`}}>{`${prefix} ${getTranslation(parent.props.lang)[t]}`}</p>&nbsp;&nbsp;
             <button
+              type="button"
+              aria-label={`Remove ${getTranslation(parent.props.lang)[t]}`}
               className="btn-delete"
               onClick={(_e) => removeExtraAttribute(j)}
             >
-              x
+              <span aria-hidden="true">x</span>
             </button>
           </div>
         );
@@ -638,23 +646,30 @@ export default class EncryptPanel extends React.Component<
 
       return (
         <li className="crypt-recipient">
+          <label htmlFor={`recipient-email-${i}`} className="visually-hidden">
+            {getTranslation(this.props.lang).encryptPanel_emailRecipient}
+          </label>
           <input
+            id={`recipient-email-${i}`}
             placeholder={
               getTranslation(this.props.lang).encryptPanel_emailRecipient
             }
             type="email"
+            autoComplete="email"
             required
             value={this.state.recipients[i].email}
             onChange={(e) => this.onChangeRecipient(e, i)}
           />
           <button
+            type="button"
             className="btn-delete"
+            aria-label={`Remove recipient ${i + 1}`}
             onClick={(e) => {
               e.preventDefault();
               this.removeRecipient(i);
             }}
           >
-            x
+            <span aria-hidden="true">x</span>
           </button>
           {renderEncFields()}
           {renderEncButtons()}
@@ -913,7 +928,7 @@ export default class EncryptPanel extends React.Component<
   renderError() {
     return (
       <div className="crypt-progress-container">
-        <h3 className="crypt-progress-error">{"Error occured"}</h3>
+        <h3 className="crypt-progress-error">{getTranslation(this.props.lang).error}</h3>
         <p
           dangerouslySetInnerHTML={{
             __html: getTranslation(this.props.lang).error,

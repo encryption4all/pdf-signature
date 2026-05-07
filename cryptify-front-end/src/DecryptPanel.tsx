@@ -140,7 +140,7 @@ export default class DecryptPanel extends React.Component<
     try {
       await this.applyDecryption();
     } catch (e) {
-      console.error("Error occured during decryption");
+      console.error("Error occurred during decryption");
       console.error(e);
       this.setState({
         decryptionState: DecryptionState.Error,
@@ -525,7 +525,7 @@ export default class DecryptPanel extends React.Component<
   renderError() {
     return (
       <div className="crypt-progress-container">
-        <h3 className="crypt-progress-error">{"Error occured"}</h3>
+        <h3 className="crypt-progress-error">{getTranslation(this.props.lang).error}</h3>
         <div
           dangerouslySetInnerHTML={{
             __html: getTranslation(this.props.lang).error,

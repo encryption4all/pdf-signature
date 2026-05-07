@@ -59,6 +59,9 @@ class App extends React.Component<AppProps, AppState> {
     this.setState({
       lang: lang,
     });
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang === Lang.NL ? "nl" : "en";
+    }
   }
 
   contentPanel() {
@@ -86,9 +89,13 @@ class App extends React.Component<AppProps, AppState> {
 
     return (
       <div className="App">
-        <div className={`content-panel ${panelClass}`}>
-          {this.contentPanel()}
-        </div>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <h1 className="visually-hidden">PostGuard PDF Signature</h1>
+        <main id="main-content" tabIndex={-1}>
+          <div className={`content-panel ${panelClass}`}>
+            {this.contentPanel()}
+          </div>
+        </main>
         {/*
         <InfoPanel
           lang={this.state.lang}

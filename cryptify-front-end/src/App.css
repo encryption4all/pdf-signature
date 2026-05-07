@@ -284,9 +284,10 @@ textarea {
   resize: none;
 }
 
-.crypt-select-protection-input-box input:focus,
-textarea:focus {
-  outline: none;
+.crypt-select-protection-input-box input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #006ef4;
+  outline-offset: 2px;
 }
 
 .crypt-btn {
@@ -451,4 +452,44 @@ form {
 .crypt-progress-container p {
   margin-bottom: 0.5em;
   color: #808080;
+}
+
+/* WCAG 2.2 AA: skip-link, visually-hidden helper, default focus indicator. */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  padding: 0.5rem 1rem;
+  background: #006ef4;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Default keyboard focus ring for buttons and links — the codebase has
+   plenty of `outline: none` overrides below, so make this rule specific
+   to focus-visible so it survives them. */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #006ef4;
+  outline-offset: 2px;
 }
