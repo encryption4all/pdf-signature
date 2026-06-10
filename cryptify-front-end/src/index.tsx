@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
 
-import { WritableStream as PolyfilledWritableStream } from "web-streams-polyfill/ponyfill";
+import { WritableStream as PolyfilledWritableStream } from "web-streams-polyfill";
 
 document.addEventListener("DOMContentLoaded", async () => {
   let downloadUuid: string | null = null;

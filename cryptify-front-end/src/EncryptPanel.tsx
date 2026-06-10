@@ -28,11 +28,10 @@ import Chunker from "./utils";
 import { withTransform } from "./utils";
 import type { AttributeCon, ISealOptions, ISigningKey } from "@e4a/pg-wasm";
 
-import YiviCore from "@privacybydesign/yivi-core";
-import YiviWeb from "@privacybydesign/yivi-web";
-import YiviClient from "@privacybydesign/yivi-client";
+import { YiviCore } from "@privacybydesign/yivi-core";
+import { YiviWeb } from "@privacybydesign/yivi-web";
+import { YiviClient } from "@privacybydesign/yivi-client";
 
-//import "@privacybydesign/yivi-css";
 
 type AttType =
   | "pbdf.sidn-pbdf.mobilenumber.mobilenumber"
@@ -192,7 +191,7 @@ export default class EncryptPanel extends React.Component<
   reportProgress(resolve: () => void, uploaded: number, done: boolean) {
     let offset = 0;
     let percentages = this.state.percentages.map((p) => p);
-    let timeouts: number[] | undefined[] = this.state.percentages.map(
+    let timeouts: (number | undefined)[] = this.state.percentages.map(
       (_) => undefined
     );
 
@@ -361,7 +360,7 @@ export default class EncryptPanel extends React.Component<
         body: JSON.stringify({ con: [...pub, ...(priv ? priv : [])] }),
       },
       result: {
-        url: (o, { sessionToken }) => `${o.url}/v2/request/jwt/${sessionToken}`,
+        url: (o, m) => `${o.url}/v2/request/jwt/${m.sessionToken}`,
         parseResponse: (r) => {
           return r
             .text()
@@ -406,7 +405,7 @@ export default class EncryptPanel extends React.Component<
           startState: "INITIALIZED",
         },
       },
-      language: (this.props.lang as string).toLowerCase(),
+      language: this.props.lang.toLowerCase() as "en" | "nl",
     });
 
     yivi.use(YiviWeb);
