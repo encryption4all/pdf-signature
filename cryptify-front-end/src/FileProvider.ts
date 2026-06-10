@@ -88,7 +88,7 @@ async function storeChunk(
       "Content-Type": "application/octet-stream",
       "content-range": `bytes ${offset}-${offset + chunk.length}/*`,
     },
-    body: new Blob([chunk]),
+    body: new Blob([chunk as Uint8Array<ArrayBuffer>]),
   });
 
   if (response.status !== 200) {

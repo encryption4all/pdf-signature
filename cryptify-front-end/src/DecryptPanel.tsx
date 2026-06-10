@@ -16,11 +16,10 @@ import { SMOOTH_TIME, PKG_URL, METRICS_HEADER } from "./Constants";
 import { getFileLoadStream } from "./FileProvider";
 import { withTransform } from "./utils";
 
-import YiviCore from "@privacybydesign/yivi-core";
-import YiviWeb from "@privacybydesign/yivi-web";
-import YiviClient from "@privacybydesign/yivi-client";
+import { YiviCore } from "@privacybydesign/yivi-core";
+import { YiviWeb } from "@privacybydesign/yivi-web";
+import { YiviClient } from "@privacybydesign/yivi-client";
 
-//import "@privacybydesign/yivi-css";
 import { IPolicy } from "@e4a/pg-wasm";
 
 streamSaver.mitm = `${process.env.PUBLIC_URL}/mitm.html?version=2.0.0`;
@@ -194,7 +193,7 @@ export default class DecryptPanel extends React.Component<
         body: JSON.stringify(kr),
       },
       result: {
-        url: (o, { sessionToken }) => `${o.url}/v2/request/jwt/${sessionToken}`,
+        url: (o, m) => `${o.url}/v2/request/jwt/${m.sessionToken}`,
         headers: METRICS_HEADER,
         parseResponse: (r) => {
           return r
@@ -229,12 +228,12 @@ export default class DecryptPanel extends React.Component<
           startState: "INITIALIZED",
         },
       },
-      language: (this.props.lang as string).toLowerCase(),
+      language: this.props.lang.toLowerCase() as "en" | "nl",
     });
 
     yivi.use(YiviWeb);
     yivi.use(YiviClient);
-    const usk = await yivi.start();
+    const usk = (await yivi.start()) as string;
 
     this.setState({
       decryptionState: DecryptionState.AskDownload,

@@ -1,7 +1,7 @@
 version: "3.4"
 services:
   build-backend:
-    image: rust:1.69
+    image: rust:1.96
     volumes:
       - "./cryptify-back-end/:/app"
     working_dir: /app
@@ -10,12 +10,10 @@ services:
     command: "cargo build --release"
 
   build-frontend:
-    image: node:17
+    image: node:22
     volumes:
       - "./cryptify-front-end/:/app"
     working_dir: /app
-    environment:
-      NODE_OPTIONS: "--openssl-legacy-provider"
     command: "bash -c 'npm install --legacy-peer-deps && npm run build'"
 
   mailcrab:

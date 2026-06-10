@@ -17,7 +17,7 @@ use pg_core::client::Unsealer;
 
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
-use rand::Rng;
+use rand::RngExt as _;
 use sha2::Digest;
 use std::fmt::Write;
 
@@ -86,7 +86,7 @@ async fn upload_init(
         }
     };
 
-    let init_cryptify_token = bytes_to_hex(&rand::thread_rng().gen::<[u8; 32]>());
+    let init_cryptify_token = bytes_to_hex(&rand::rng().random::<[u8; 32]>());
 
     match request.recipient.parse() {
         Ok(recipient) => {
@@ -239,7 +239,7 @@ fn compute_hash(cryptify_token: &[u8], data: &[u8]) -> String {
     let mut hash = sha2::Sha256::new();
     hash.update(cryptify_token);
     hash.update(data);
-    format!("{:x}", hash.finalize())
+    bytes_to_hex(&hash.finalize())
 }
 
 #[put("/fileupload/<uuid>", data = "<data>")]
