@@ -15,13 +15,11 @@ services:
     command: "bash -c 'mkdir -p /tmp/data && cargo watch -x run'"
 
   frontend:
-      image: node:17
+      image: node:22
       stdin_open: true
       volumes:
           - "./cryptify-front-end/:/app"
       working_dir: /app
-      environment:
-          NODE_OPTIONS: "--openssl-legacy-provider"
       command: "bash -c 'npm install --legacy-peer-deps && npm start'"
 
   nginx:
