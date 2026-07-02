@@ -59,6 +59,7 @@
         "build-main": "REACT_APP_ENV=main craco build",
         "dist-electron": "electron-builder",
         "test": "craco test",
+        "test:electron": "node --test test/*.test.js",
         "eject": "craco eject"
     },
     "eslintConfig": {
