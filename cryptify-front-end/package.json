@@ -10,7 +10,7 @@
     ],
     "build": {
         "appId": "cryptify",
-        "files": ["dist/**/*", "./build/*"],
+        "files": ["dist/**/*", "./build/*", "public/**/*"],
         "dmg": {
             "contents": [
                 {
