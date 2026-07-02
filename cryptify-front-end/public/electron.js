@@ -1,6 +1,7 @@
 const electron = require('electron')
 const app = electron.app
 const path = require('path')
+const { createWebPreferences } = require('./windowConfig')
 
 const BrowserWindow = electron.BrowserWindow
 
@@ -13,9 +14,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-    },
+    webPreferences: createWebPreferences(),
   })
 
   mainWindow.loadURL(
