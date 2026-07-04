@@ -2,6 +2,7 @@
 #[derive(Debug)]
 pub enum Error {
     BadRequest(Option<String>),
+    Unauthorized(Option<String>),
     UnprocessableEntity(Option<String>),
     InternalServerError(Option<String>),
 }
@@ -11,6 +12,11 @@ impl<'r, 'o: 'r> rocket::response::Responder<'r, 'o> for Error {
         match self {
             Error::BadRequest(e) => rocket::response::status::BadRequest(e).respond_to(request),
             // response::status::Custom apparently doesn't support Option<R>
+            Error::Unauthorized(e) => rocket::response::status::Custom::<String>(
+                rocket::http::Status::Unauthorized,
+                e.unwrap_or_else(|| "".to_owned()),
+            )
+            .respond_to(request),
             Error::UnprocessableEntity(e) => rocket::response::status::Custom::<String>(
                 rocket::http::Status::UnprocessableEntity,
                 e.unwrap_or_else(|| "".to_owned()),

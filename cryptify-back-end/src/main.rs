@@ -326,6 +326,7 @@ async fn upload_chunk(
 }
 
 struct FinalizeHeaders {
+    cryptify_token: String,
     content_range: ContentRange,
 }
 
@@ -336,6 +337,16 @@ impl<'r> FromRequest<'r> for FinalizeHeaders {
     async fn from_request(
         request: &'r rocket::Request<'_>,
     ) -> rocket::request::Outcome<Self, Self::Error> {
+        let cryptify_token = match request.headers().get_one("CryptifyToken") {
+            Some(cryptify_token) => cryptify_token,
+            None => {
+                return rocket::request::Outcome::Error((
+                    rocket::http::Status::BadRequest,
+                    "Missing Cryptify Token header".into(),
+                ))
+            }
+        }
+        .to_string();
         let content_range = match request.headers().get_one("Content-Range") {
             Some(content_range) => content_range,
             None => {
@@ -352,7 +363,10 @@ impl<'r> FromRequest<'r> for FinalizeHeaders {
                 return rocket::request::Outcome::Error((rocket::http::Status::BadRequest, e))
             }
         };
-        rocket::request::Outcome::Success(FinalizeHeaders { content_range })
+        rocket::request::Outcome::Success(FinalizeHeaders {
+            cryptify_token,
+            content_range,
+        })
     }
 }
 
@@ -369,6 +383,12 @@ async fn upload_finalize(
         None => return Ok(None),
     };
     let mut state = state.lock().await;
+
+    if headers.cryptify_token != state.cryptify_token {
+        return Err(Error::Unauthorized(Some(
+            "Cryptify Token header does not match".to_owned(),
+        )));
+    }
 
     if headers.content_range.size != Some(state.uploaded) {
         return Err(Error::UnprocessableEntity(None));
