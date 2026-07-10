@@ -242,6 +242,14 @@ fn compute_hash(cryptify_token: &[u8], data: &[u8]) -> String {
     bytes_to_hex(&hash.finalize())
 }
 
+/// Returns `true` when the `CryptifyToken` presented by the caller matches the
+/// token currently expected for the session. Both `upload_chunk` and
+/// `upload_finalize` gate on this before touching files or dispatching email,
+/// so keeping the comparison in one place makes the auth logic testable.
+fn cryptify_token_matches(presented: &str, expected: &str) -> bool {
+    presented == expected
+}
+
 #[put("/fileupload/<uuid>", data = "<data>")]
 async fn upload_chunk(
     config: &State<CryptifyConfig>,
@@ -281,7 +289,7 @@ async fn upload_chunk(
         )));
     }
 
-    if headers.cryptify_token != state.cryptify_token {
+    if !cryptify_token_matches(&headers.cryptify_token, &state.cryptify_token) {
         return Err(Error::BadRequest(Some(
             "Cryptify Token header does not match".to_owned(),
         )));
@@ -326,6 +334,7 @@ async fn upload_chunk(
 }
 
 struct FinalizeHeaders {
+    cryptify_token: String,
     content_range: ContentRange,
 }
 
@@ -336,6 +345,16 @@ impl<'r> FromRequest<'r> for FinalizeHeaders {
     async fn from_request(
         request: &'r rocket::Request<'_>,
     ) -> rocket::request::Outcome<Self, Self::Error> {
+        let cryptify_token = match request.headers().get_one("CryptifyToken") {
+            Some(cryptify_token) => cryptify_token,
+            None => {
+                return rocket::request::Outcome::Error((
+                    rocket::http::Status::BadRequest,
+                    "Missing Cryptify Token header".into(),
+                ))
+            }
+        }
+        .to_string();
         let content_range = match request.headers().get_one("Content-Range") {
             Some(content_range) => content_range,
             None => {
@@ -352,7 +371,10 @@ impl<'r> FromRequest<'r> for FinalizeHeaders {
                 return rocket::request::Outcome::Error((rocket::http::Status::BadRequest, e))
             }
         };
-        rocket::request::Outcome::Success(FinalizeHeaders { content_range })
+        rocket::request::Outcome::Success(FinalizeHeaders {
+            cryptify_token,
+            content_range,
+        })
     }
 }
 
@@ -369,6 +391,12 @@ async fn upload_finalize(
         None => return Ok(None),
     };
     let mut state = state.lock().await;
+
+    if !cryptify_token_matches(&headers.cryptify_token, &state.cryptify_token) {
+        return Err(Error::Unauthorized(Some(
+            "Cryptify Token header does not match".to_owned(),
+        )));
+    }
 
     if headers.content_range.size != Some(state.uploaded) {
         return Err(Error::UnprocessableEntity(None));
@@ -436,4 +464,41 @@ async fn rocket() -> _ {
         .attach(AdHoc::config::<CryptifyConfig>())
         .manage(Store::new())
         .manage(vk)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::cryptify_token_matches;
+
+    // Happy path: the caller presents the exact token the session expects.
+    #[test]
+    fn accepts_matching_token() {
+        let expected = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+        assert!(cryptify_token_matches(expected, expected));
+    }
+
+    // Rejection path: a forged/guessed token must not authenticate.
+    #[test]
+    fn rejects_mismatching_token() {
+        let expected = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+        let forged = "0000000000000000000000000000000000000000000000000000000000000000";
+        assert!(!cryptify_token_matches(forged, expected));
+    }
+
+    // Rejection path: an empty token (e.g. a header present but blank) is rejected.
+    #[test]
+    fn rejects_empty_presented_token() {
+        assert!(!cryptify_token_matches(
+            "",
+            "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+        ));
+    }
+
+    // Rejection path: comparison is exact — a differing-length prefix is not a match.
+    #[test]
+    fn rejects_prefix_of_expected_token() {
+        let expected = "9f86d081884c7d659a2feaa0c55ad015";
+        let prefix = "9f86d081";
+        assert!(!cryptify_token_matches(prefix, expected));
+    }
 }
