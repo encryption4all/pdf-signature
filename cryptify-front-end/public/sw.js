@@ -10,6 +10,13 @@ self.addEventListener('activate', event => {
 
 const map = new Map()
 
+// Generate a cryptographically secure random hex string for the download
+// interception URL, instead of the non-cryptographic Math.random().
+const randomHex = () =>
+  Array.from(self.crypto.getRandomValues(new Uint8Array(16)), b =>
+    b.toString(16).padStart(2, '0')
+  ).join('')
+
 // This should be called once per download
 // Each event has a dataChannel that the data will be piped through
 self.onmessage = event => {
@@ -20,7 +27,7 @@ self.onmessage = event => {
   }
 
   const data = event.data
-  const downloadUrl = data.url || self.registration.scope + Math.random() + '/' + (typeof data === 'string' ? data : data.filename)
+  const downloadUrl = data.url || self.registration.scope + randomHex() + '/' + (typeof data === 'string' ? data : data.filename)
   const port = event.ports[0]
   const metadata = new Array(3) // [stream, data, port]
 
