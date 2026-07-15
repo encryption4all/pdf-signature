@@ -1,7 +1,4 @@
-
----
-
-## Agent notes (migrated from the dobby memory repo)
+# Agent notes (migrated from the dobby memory repo)
 
 ## Overview
 `encryption4all/pdf-signature` is a fork of `cryptify`, sharing the same README,
@@ -25,9 +22,14 @@ Keys: `server_url`, `address`, `data_dir`, `email_from`, `smtp_*`,
 ## Build / verify
 - **No CI workflow.** `.github/` doesn't exist. Call out "no CI, manual review"
   in every PR body.
-- **No tests anywhere.** Both `cargo test` and `npm test` return zero matches.
-  Verify the backend with `cargo build` + `cargo fmt --check`; verify the
-  frontend with `npm run build-main`.
+- **Tests exist; run them.** Backend: `cargo test` runs the `#[cfg(test)]`
+  suite in `cryptify-back-end/src/main.rs` (incl. `cryptify_token_matches`).
+  Frontend: `npm run test:electron` runs `test/sw.test.js` +
+  `test/windowConfig.test.js` via `node --test`. (`npm test` maps to
+  `craco test`, which finds no specs because these files live in `test/`, not
+  `src/`, and use `node --test` rather than jest.) Verify the backend with
+  `cargo test` + `cargo build` + `cargo fmt --check`; verify the frontend with
+  `npm run test:electron` + `npm run build-main`.
 - **Frontend `npm install` needs `--legacy-peer-deps`.** React peer mismatches
   (e.g. react-file-drop wants an older react) block strict resolution.
 - Frontend dev server runtime errors are expected without a backend running
